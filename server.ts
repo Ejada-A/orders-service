@@ -117,6 +117,12 @@ app.patch('/orders/:id', async (req, res) => {
   }
 });
 
+// Health check endpoint for Kubernetes probes
+app.get('/health', (req, res) => {
+  return res.status(200).json({ status: 'healthy', service: 'orders-service' });
+});
+
 app.listen(PORT, () => {
   console.log(`Orders service running on port ${PORT}`);
 });
+
