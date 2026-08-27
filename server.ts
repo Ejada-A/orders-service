@@ -8,8 +8,13 @@ import { Product } from './product.model';
 dotenv.config();
 dotenv.config({ path: '../../.env' });
 
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 const app = express();
-app.use(cors());
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 const PORT = process.env.PORT || 5003;
@@ -49,6 +54,10 @@ app.post('/orders', async (req, res) => {
     const validatedItems = [];
 
     for (const item of items) {
+      if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+        return res.status(400).json({ success: false, error: 'Item quantity must be a positive integer' });
+      }
+
       const product = await Product.findById(item._id || item.productId);
       if (!product) {
         return res.status(400).json({ success: false, error: `Product ${item._id || item.productId} not found` });
@@ -117,12 +126,6 @@ app.patch('/orders/:id', async (req, res) => {
   }
 });
 
-// Health check endpoint for Kubernetes probes
-app.get('/health', (req, res) => {
-  return res.status(200).json({ status: 'healthy', service: 'orders-service' });
-});
-
 app.listen(PORT, () => {
   console.log(`Orders service running on port ${PORT}`);
 });
-
